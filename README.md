@@ -12,7 +12,8 @@
 bun install --frozen-lockfile
 bun run build
 mkdir -p "$HOME/.local/bin"
-install -m 755 dist/tiness "$HOME/.local/bin/tiness"
+cp dist/tiness "$HOME/.local/bin/tiness"
+chmod 755 "$HOME/.local/bin/tiness"
 ```
 
 将下面一行加入 `~/.zshrc` 或 `~/.bashrc`，重新打开终端：
