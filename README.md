@@ -2,16 +2,74 @@
 
 一个 Bun + TypeScript 实现的终端 Agent Harness：固定工具、显式权限、复杂任务计划、有预算的上下文、Esc 中断和 FIFO 消息队列。
 
+**目前仅支持 macOS 和 Linux（arm64 / x64），不支持 Windows。暂不提供预编译二进制文件下载，请按下方步骤自行编译和安装。**
+
 **验证状态：40 项本地自动化测试通过，3 项真实模型集成场景分别通过；本机 PTY 终端验收及独立二进制启动/退出通过。测试发现并修复了摘要生成预算问题。详见 [测试报告](TESTING.md)。**
 
-## 运行环境
+## 从源码编译与安装
 
-- 开发：Bun 1.4.2 或更高版本。
-- 使用独立二进制：macOS 或 Linux，不需要安装 Bun / Node。
-- `/bin/bash`、交互式终端、可访问的 Responses API 端点及对应模型凭据。
-- 任务需要的 git、Python 等程序由工作环境自行提供。
+### 1. 准备运行环境
 
-## 先手动配置模型
+- macOS 或 Linux，arm64 或 x64 架构；需要交互式终端和 `/bin/bash`。
+- 编译需要 Bun，当前项目使用 Bun 1.4.2 验证。编译后的独立程序不需要另装 Bun / Node.js。
+- 获取源码需要 Git（也可以下载源码压缩包后解压）。安装依赖和首次构建需要网络连接。
+- 执行任务需要可访问的 Responses API 端点、模型名称及 API Key。任务使用的 Git、Python 等工具需自行安装。
+
+尚未安装 Bun 时，可按 [Bun 官方安装说明](https://bun.sh/docs/installation) 操作。macOS 和 Linux 的安装命令为：
+
+```bash
+curl -fsSL https://bun.com/install | bash
+```
+
+Linux 使用该安装方式时需先安装 `unzip`。完成后打开新终端，确认 Bun 可用：
+
+```bash
+bun --version
+```
+
+若提示找不到命令，按官方说明把 `~/.bun/bin` 加入 PATH。操作系统版本和 CPU 要求也以该安装说明为准。
+
+### 2. 获取源码并编译
+
+将下面的 `<本项目仓库地址>` 替换为项目实际的 Git 地址；若已下载并解压源码，直接进入源码根目录即可。
+
+```bash
+git clone <本项目仓库地址> tiness
+cd tiness
+bun install --frozen-lockfile
+bun run typecheck
+bun run build
+```
+
+`bun run build` 为当前机器的平台和架构生成 `dist/tiness`。以下命令不需要模型配置，也不会调用 API：
+
+```bash
+./dist/tiness --version
+./dist/tiness --help
+```
+
+### 3. 安装到当前用户目录
+
+在源码根目录执行，无需 `sudo`：
+
+```bash
+mkdir -p "$HOME/.local/bin"
+install -m 755 dist/tiness "$HOME/.local/bin/tiness"
+export PATH="$HOME/.local/bin:$PATH"
+tiness --version
+```
+
+为了让后续新终端也能找到 `tiness`，将下面一行加入所用 shell 的配置文件：zsh 使用 `~/.zshrc`，bash 通常使用 `~/.bashrc`（登录 shell 需确保其启动文件加载该配置）。
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+保存后重新打开终端。若暂不修改 PATH，也可以直接使用 `~/.local/bin/tiness` 启动。
+
+更新源码后，重新执行依赖安装、类型检查、构建和上述 `install` 命令即可更新程序；已有 `~/.tiness/` 模型和运行配置会保留。安装的是独立可执行文件，运行时无需保留源码目录，但调用的外部工具仍需存在。
+
+## 首次运行：配置模型
 
 示例配置位于：
 
@@ -21,12 +79,16 @@
 | `config/runtime.example.json` | `~/.tiness/runtime.json` | 全局运行默认值，可只保留需要修改的字段 |
 | `config/workspace-runtime.example.json` | `<工作区>/.tiness/runtime.json` | 可选项目配置 |
 
-首次配置时，在确认目标文件不存在或已备份后复制：
+首次配置时，在源码根目录执行以下命令；已有配置不会覆盖：
 
 ```bash
 mkdir -p ~/.tiness
-cp -n config/config.example.json ~/.tiness/config.json
-cp -n config/runtime.example.json ~/.tiness/runtime.json
+if [ ! -e "$HOME/.tiness/config.json" ]; then
+  cp config/config.example.json "$HOME/.tiness/config.json"
+fi
+if [ ! -e "$HOME/.tiness/runtime.json" ]; then
+  cp config/runtime.example.json "$HOME/.tiness/runtime.json"
+fi
 chmod 700 ~/.tiness
 chmod 600 ~/.tiness/config.json ~/.tiness/runtime.json
 ```
@@ -45,34 +107,53 @@ chmod 600 ~/.tiness/config.json ~/.tiness/runtime.json
 
 模型需要支持 Responses API 的函数调用与所用 strict schema。配置 `windowTokens` 和 `maxOutputTokens` 时，以实际模型能力为准；默认 32768 是本地预算，不是对模型窗口的自动发现。
 
-## 安装与构建
+## 运行项目
+
+完成安装和模型配置后，进入希望 Tiness 操作的项目目录，再启动：
 
 ```bash
-bun install --frozen-lockfile
-bun run typecheck
-bun run build
+cd /path/to/your/project
+tiness
 ```
 
-本机产物为 `dist/tiness`。从想要工作的目录启动：
+`/path/to/your/project` 需替换为你的实际工作目录。**启动时所在的目录就是工作区**，任务日志与产物保存在该目录的 `.tiness/` 下。无需在 Tiness 源码目录中运行，也不需要把可执行文件复制到每个项目。
+
+启动后输入任务，按 Enter 提交；按 Esc 中断当前请求，输入 `/quit` 或按 Ctrl+C 退出。首次可以让它读取练习项目中的一个文本文件，再尝试需要授权的修改操作。
+
+未安装到 PATH 时，也可以使用绝对路径启动：
 
 ```bash
 cd /path/to/your/project
 /path/to/tiness/dist/tiness
 ```
 
-开发时从源码运行：
+### 开发时直接运行源码
+
+在源码根目录执行 `bun run start`，会把 Tiness 源码目录本身作为工作区。要操作其他项目，先切换工作目录，再指定入口的绝对路径：
 
 ```bash
+cd /path/to/your/project
 bun --no-env-file /path/to/tiness/src/cli.ts
 ```
 
-独立二进制禁用项目 `.env`、`bunfig.toml`、`package.json`、`tsconfig.json` 的自动加载。源码开发建议直接使用上面的 `--no-env-file` 命令；父级启动器若已将变量导入环境，Tiness 无法判断其来源。
+源码运行需要保留 Bun 和已安装的项目依赖。独立二进制禁用项目 `.env`、`bunfig.toml`、`package.json`、`tsconfig.json` 的自动加载。源码开发使用上面的 `--no-env-file` 命令；父级启动器若已将变量导入环境，Tiness 无法判断其来源。
+
+### 可选：交叉编译其他平台
+
+通常只需在目标机器执行 `bun run build`。如需自行构建全部目标，在源码根目录执行：
 
 ```bash
 bun run build:all
 ```
 
-产生 `dist/tiness-darwin-arm64`、`dist/tiness-darwin-x64`、`dist/tiness-linux-arm64` 和 `dist/tiness-linux-x64`。交叉编译需要获取对应 Bun runtime；各平台的实际运行验收仍需在对应系统完成。
+| 目标 | 构建产物 |
+|---|---|
+| macOS Apple Silicon | `dist/tiness-darwin-arm64` |
+| macOS Intel | `dist/tiness-darwin-x64` |
+| Linux arm64 | `dist/tiness-linux-arm64` |
+| Linux x64 | `dist/tiness-linux-x64` |
+
+交叉编译会获取对应的 Bun runtime。这些文件是本地构建产物，**项目目前不提供它们的下载**。安装时选择与目标系统、架构匹配的文件，并将它复制为 `~/.local/bin/tiness`。当前脚本没有单列 Linux musl 目标；交叉构建结果仍需在目标系统验证，不能仅凭编译成功判断运行兼容性。
 
 ## 终端操作
 
