@@ -42,6 +42,8 @@ export PATH="$HOME/.local/bin:$PATH"
 
 轮次、超时、上下文预算和权限均有默认值，可在 `~/.tiness/runtime.json` 中调整，参考 [配置示例](config/runtime.example.json)。项目可通过 `.tiness/runtime.json` 覆盖运行设置，但权限只能收紧。
 
+**默认运行预算较保守**，例如上下文窗口 `context.windowTokens` 为 32768。复杂或长时间任务可能因上下文不足、轮次上限或超时而报错或提前结束。遇到这类限制，可修改 `~/.tiness/runtime.json` 中的上下文、轮次和超时参数，适当提高后重启 Tiness；上下文窗口和输出上限应与实际模型能力匹配。
+
 ## 运行
 
 进入要操作的项目目录后启动：
