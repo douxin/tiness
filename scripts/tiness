@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+TINESS_SOURCE_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+exec bun --no-env-file "$TINESS_SOURCE_DIR/src/cli.ts" "$@"

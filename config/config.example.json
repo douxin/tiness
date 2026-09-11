@@ -1,0 +1,5 @@
+{
+  "baseUrl": "https://api.openai.com/v1",
+  "apiKey": "",
+  "model": ""
+}

@@ -1,0 +1,46 @@
+{
+  "execution": {
+    "maxRounds": 40,
+    "sessionTimeoutMs": 1800000,
+    "modelTimeoutMs": 120000,
+    "modelMaxRetries": 2,
+    "retryBaseDelayMs": 1000,
+    "retryMaxDelayMs": 10000,
+    "toolTimeoutMs": 120000,
+    "shellMaxTimeoutMs": 600000,
+    "terminationGraceMs": 2000,
+    "approvalTimeoutMs": 300000
+  },
+  "queue": {
+    "maxPendingMessages": 100,
+    "maxMessageBytes": 65536
+  },
+  "permissions": {
+    "read": "allow",
+    "write": "ask",
+    "edit": "ask",
+    "shell": "ask"
+  },
+  "context": {
+    "windowTokens": 32768,
+    "maxOutputTokens": 8192,
+    "safetyMarginTokens": 2048,
+    "compactAtRatio": 0.8,
+    "compactTargetRatio": 0.6,
+    "recentRounds": 2,
+    "summaryMaxTokens": 2048,
+    "maxCompactionsPerSession": 4,
+    "compactionTimeoutMs": 60000,
+    "maxInputRepairsPerRound": 1
+  },
+  "tools": {
+    "readDefaultLines": 200,
+    "readMaxLines": 2000,
+    "resultMaxBytes": 32768,
+    "artifactMaxBytes": 10485760,
+    "writeMaxBytes": 1048576
+  },
+  "plan": {
+    "maxSteps": 10
+  }
+}

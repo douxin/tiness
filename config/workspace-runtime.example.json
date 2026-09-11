@@ -1,0 +1,8 @@
+{
+  "execution": {
+    "maxRounds": 40
+  },
+  "permissions": {
+    "shell": "ask"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "tiness",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A minimal, bounded, terminal-first agent harness",
+  "scripts": {
+    "start": "bun --no-env-file src/cli.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "build": "bun run scripts/build.ts",
+    "build:all": "bun run scripts/build.ts --all"
+  },
+  "dependencies": {
+    "@sinclair/typebox": "^0.34.52",
+    "js-tiktoken": "^1.0.21",
+    "openai": "^7.15.0",
+    "string-width": "^8.2.2",
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.2",
+    "typescript": "^7.0.2"
+  },
+  "bin": {
+    "tiness": "scripts/tiness"
+  }
+}
